@@ -50,12 +50,12 @@
     - Corpo:
       ```json
       {
-        "user_id": "",
         "chat_id": "",
         "prompt": "",
         "model": ""
       }
       ```
+    - **Observação:** O `user_id` não precisa ser enviado no corpo da requisição. Quando o JWT é enviado no header, o backend extrai o `user_id` diretamente do token, garantindo segurança e autenticidade do usuário.
 
 - **GET /chat**
     - Retorna o histórico do chat e tokens consumidos.
@@ -67,19 +67,19 @@
 ## FLUXO PREVISTO - ENVIO DE PROMPT
 
 - Faz o enriquecimento do prompt usando o banco vetorial e o user_id:
-	- Busca no banco vetorial se tem algum dado que agregue nesse prompt
+    - Busca no banco vetorial se tem algum dado que agregue nesse prompt
+    - O user_id é obtido diretamente do JWT enviado no header, não sendo necessário passar pelo corpo da requisição.
 
 - Faz o processo de embedidng:
-	- Verifica se o prompt passado (antes do enriquecimento) contem algum informação que deve ser salva. ex: "sou um desenvolvedor de software" ou "fale comigo de maneira formal", basicamente preferencias de uso do usuario
-	- O embedding vai para o banco vetorial
+    - Verifica se o prompt passado (antes do enriquecimento) contem algum informação que deve ser salva. ex: "sou um desenvolvedor de software" ou "fale comigo de maneira formal", basicamente preferencias de uso do usuario
+    - O embedding vai para o banco vetorial
 
 - Foi passado um chat_id?
-	- Não (chat_id: ""):
-		-Cria um chat:
-			- Chat deve ser uma classe que contem alguns atributos internos, como tokens usados, mensagens (input e output) e horario de atualização
-		- Sobe o chat no banco NOSQL
-	- Sim:
-		- Puxa no NOSQL o historico de mensagens para passar como contexto 
+    - Não (chat_id: ""):
+        -Cria um chat:
+            - Chat deve ser uma classe que contem alguns atributos internos, como tokens usados, mensagens (input e output) e horario de atualização
+        - Sobe o chat no banco NOSQL
+    - Sim:
+        - Puxa no NOSQL o historico de mensagens para passar como contexto 
 
 - Salva a resposta no NOSQL
-

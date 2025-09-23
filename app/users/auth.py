@@ -2,20 +2,19 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import jwt
+from jwt import PyJWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from cryptography.fernet import Fernet
 
 from app.users.models import SessionLocal, User
-
-SECRET_KEY = "troque-esta-chave-por-uma-secreta"  
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-
-FERNET_KEY = Fernet.generate_key()
-fernet = Fernet(FERNET_KEY)
+from app.core.config import (
+    SECRET_KEY,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    fernet,
+)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
@@ -27,17 +26,17 @@ def get_db():
     finally:
         db.close()
 
-# Hash e verificação de senha
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# JWT
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -54,7 +53,7 @@ def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except jwt.PyJWTError:
+    except PyJWTError:
         raise credentials_exception
 
     user = db.query(User).filter(User.email == email).first()

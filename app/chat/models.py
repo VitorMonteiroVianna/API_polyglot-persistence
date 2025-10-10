@@ -1,0 +1,1 @@
+# TODO: criar um modelo para o input e output esperado pelo endpoint de chat

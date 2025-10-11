@@ -1,15 +1,19 @@
 import os
 import requests
 
-class OpenRouterService:
+from app.users.models import User
+
+
+class OpenRouterService():
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
     PREDEFINED_MODELS = {
         "gemini-2.5-flash": "google/gemini-2.5-flash",
+        "gpt-4.1-mini": "openai/gpt-4.1-mini"
         # TODO: adicionar os modelos aqui 
     }
 
-    def __init__(self):
-        self.api_key = os.getenv("OPEN_ROUTER_KEY")
+    def __init__(self, api_key: str):
+        self.api_key = api_key
         if not self.api_key:
             raise ValueError("OPEN_ROUTER_KEY environment variable is not set.")
 

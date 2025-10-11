@@ -10,7 +10,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="FastAPI JWT Example")
 
-# inclui rotas
 app.include_router(users_router.router, prefix="/users", tags=["users"])
 app.include_router(chat_router.router, prefix="/chat", tags=["chat"])
 

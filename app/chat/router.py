@@ -7,10 +7,10 @@ from app.chat.runners.message import MessageRunner
 router = APIRouter()
 
 
-@router.post("message")
+@router.post("/message")
 def send(current_user: User = Depends(get_current_user)):
 
-    runner = MessageRunner()
+    runner = MessageRunner(user= current_user)
     res = runner.run()
     
     return res

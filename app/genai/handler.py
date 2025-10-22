@@ -3,6 +3,7 @@ from app.services.open_router import OpenRouterService
 from app.users.models import User
 from app.users import auth
 
+from app.genai.available_models import AvailableModels
 
 
 class GenaiHander:
@@ -23,7 +24,7 @@ class GenaiHander:
     def get_completions(
             self, 
             message: str, 
-            model: str = "gemini-2.5-flash", 
+            model: AvailableModels = AvailableModels.GEMINI_2_5_FLASH, 
             max_tokens: int = 256, 
             temperature: float = 1.0
     ) -> dict:     # TODO: adicional uma BaseModel com o conteudo da resposta

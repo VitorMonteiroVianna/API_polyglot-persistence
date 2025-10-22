@@ -1,16 +1,13 @@
 import os
 import requests
 
+from app.genai.available_models import AvailableModels
+
 from app.users.models import User
 
 
 class OpenRouterService():
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-    PREDEFINED_MODELS = {
-        "gemini-2.5-flash": "google/gemini-2.5-flash",
-        "gpt-4.1-mini": "openai/gpt-4.1-mini"
-        # TODO: adicionar os modelos aqui 
-    }
 
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -26,11 +23,11 @@ class OpenRouterService():
     def generate_response(
         self, 
         message: str, 
-        model: str = "gemini-2.5-flash", 
+        model: AvailableModels = AvailableModels.GEMINI_2_5_FLASH, 
         max_tokens: int = 256, 
         temperature: float = 1.0
     ) -> dict:
-        model_id = self.select_model(model)
+        model_id = model.capitalize()
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"

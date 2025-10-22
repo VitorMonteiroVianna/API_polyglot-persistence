@@ -1,0 +1,26 @@
+{
+    "id": "gen-1760137857-Eg0z8RK4xGFjZpM6d0bt",
+    "provider": "OpenAI",
+    "model": "openai/gpt-4.1-mini",
+    "object": "chat.completion",
+    "created": 1760137857,
+    "choices": [
+        {
+            "logprobs": null,
+            "finish_reason": "stop",
+            "native_finish_reason": "completed",
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Claro! Aqui vai uma:\n\nPor que o livro de matemática se suicidou?\n\nPorque ele tinha muitos problemas! 😄",
+                "refusal": null,
+                "reasoning": null
+            }
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 12,
+        "completion_tokens": 26,
+        "total_tokens": 38
+    }
+}

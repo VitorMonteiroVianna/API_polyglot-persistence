@@ -3,9 +3,6 @@ import requests
 
 from app.genai.available_models import AvailableModels
 
-from app.users.models import User
-
-
 class OpenRouterService():
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -40,4 +37,4 @@ class OpenRouterService():
         }
         response = requests.post(self.BASE_URL, json=payload, headers=headers)
         response.raise_for_status()
-        return response.json()
+        return response.json()        

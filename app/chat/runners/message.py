@@ -21,7 +21,7 @@ class ChatRunner:
             model=payload.genai_model
         )
         
-        return {"res": genai_res}
+        return {"res": genai_res.model_dump()}
         
     def send():
         # TODO: aqui vai vir o processo de enviar uma mensagem

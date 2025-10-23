@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from app.users.auth import get_current_user
 from app.users.models import User
 
-from app.chat.models.message import SendMessage
+from app.chat.model import SendMessage
 
 from app.chat.runners.message import ChatRunner
 

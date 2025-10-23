@@ -1,10 +1,14 @@
 from typing import Dict
 
 from app.services.open_router import OpenRouterService
+
 from app.users.models import User
 from app.users import auth
+
 from app.genai.available_models import AvailableModels
-from app.chat.models.message import CompletionTokenDetails, GenaiModelUsage, GenaiMessage
+
+from app.chat.messages import UserMessage, GenaiMessage
+from app.chat.tokens import CompletionTokenDetails, GenaiModelUsage
 
 from app.shared import utils
 
@@ -25,6 +29,7 @@ class GenaiHander:
 
     def create_genai_message_from_open_router_res(
         self,
+        user_message_id: str,
         open_router_res: Dict
     ) -> GenaiMessage:
         """
@@ -53,29 +58,28 @@ class GenaiHander:
         )
 
         return GenaiMessage(
+            user_message_id=user_message_id,
             message_id=message_id,
             genai_role=message_data.get("role", "assistant"),
             text=message_data.get("content", ""),
             genai_model=AvailableModels(open_router_res["model"]),
-            usage=usage
+            genai_usage=usage
         )
 
     def get_completions(
             self, 
-            message: str, 
-            model: AvailableModels = AvailableModels.GEMINI_2_5_FLASH, 
-            max_tokens: int = 256, 
-            temperature: float = 1.0
+            user_message: UserMessage
     ) -> GenaiMessage:
         
         open_router_res = self.open_router.generate_response(
-            message = message,
-            model= model,
-            max_tokens= max_tokens,
-            temperature= temperature,
+            message = user_message.text,
+            model= user_message.genai_model,
+            max_tokens= user_message.max_tokens,
+            temperature= user_message.temperature,
         )
         genai_message = self.create_genai_message_from_open_router_res(
-            open_router_res
+            user_message_id = user_message.message_id,
+            open_router_res = open_router_res
         )
 
         return genai_message

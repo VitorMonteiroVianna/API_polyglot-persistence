@@ -18,3 +18,6 @@ def send(
     runner = ChatRunner(user= current_user)
     res = runner.run(payload)
     return res
+
+# @router.get("/message")
+# def get_chat():

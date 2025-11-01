@@ -15,7 +15,7 @@ class ChatRunner:
         self.genai_handler: GenaiHander= self.start_genai_hander()
 
     def run(self, payload: SendMessagePayload):
-
+        
         user_message = self.create_user_message(payload)
         genai_res = self.get_genai_response(user_message)
         
@@ -29,8 +29,8 @@ class ChatRunner:
         return UserMessage(
             text= payload.prompt,
             genai_model= payload.genai_model,
-            max_tokens= self.MAX_TOKENS,
-            temperature= self.TEMPERATURE
+            max_tokens= payload.max_tokens,
+            temperature= payload.temperature
         )
 
     def get_genai_response(self, user_message: UserMessage) -> GenaiMessage:

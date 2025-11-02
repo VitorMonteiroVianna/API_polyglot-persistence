@@ -28,42 +28,28 @@ class GenaiHander:
         return decrypted_key
 
     def create_genai_message_from_open_router_res(
-        self,
-        user_message_id: str,
-        open_router_res: Dict
+        self, open_router_res: Dict, user_message: UserMessage
     ) -> GenaiMessage:
         """
         Cria um objeto GenaiMessage a partir da resposta retornada pelo 
         OpenRouter.
         """
-        message_id = utils.generate_hash_id()
-
         choice = open_router_res["choices"][0]
-        message_data = choice["message"]
-
-        usage_data = open_router_res.get("usage", {})
-
-        completion_details_data = usage_data.get("completion_tokens_details")
-        completion_details = None
-        if completion_details_data:
-            completion_details = CompletionTokenDetails(
-                **completion_details_data
-            )
-
-        usage = GenaiModelUsage(
-            prompt_tokens=usage_data.get("prompt_tokens", 0),
-            completion_tokens=usage_data.get("completion_tokens", 0),
-            total_tokens=usage_data.get("total_tokens", 0),
-            completion_tokens_details=completion_details
-        )
-
+        usage = open_router_res.get("usage", {})
         return GenaiMessage(
-            user_message_id=user_message_id,
-            message_id=message_id,
-            genai_role=message_data.get("role", "assistant"),
-            text=message_data.get("content", ""),
+            text=choice["message"]["content"],
             genai_model=AvailableModels(open_router_res["model"]),
-            genai_usage=usage
+            conversation_id=user_message.conversation_id,
+            user_message_id=user_message.message_id,
+            genai_role=choice["message"]["role"],
+            genai_usage=GenaiModelUsage(
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+                completion_tokens_details=CompletionTokenDetails(**usage.get("completion_tokens_details", {}))
+                if usage.get("completion_tokens_details")
+                else None,
+            ),
         )
 
     def get_completions(
@@ -78,8 +64,8 @@ class GenaiHander:
             temperature= user_message.temperature,
         )
         genai_message = self.create_genai_message_from_open_router_res(
-            user_message_id = user_message.message_id,
-            open_router_res = open_router_res
+            open_router_res = open_router_res,
+            user_message = user_message
         )
 
         return genai_message

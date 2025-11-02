@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, asdict
 from abc import ABC
+from datetime import datetime
 
 from app.shared import utils
 
@@ -14,6 +15,8 @@ class Message(ABC):
     """
     text: str
     genai_model: AvailableModels
+    conversation_id: str
+    created_at: datetime = field(default_factory=datetime.utcnow)
     message_id: str = field(default_factory=lambda: utils.generate_hash_id())
 
     def as_dict(self) -> dict:

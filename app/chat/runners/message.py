@@ -5,8 +5,7 @@ from app.chat.model import SendMessagePayload
 from app.genai.handler import GenaiHander
 
 from app.chat.messages import UserMessage, GenaiMessage
-
-
+from app.shared import utils
 
 class ChatRunner:
 
@@ -27,12 +26,14 @@ class ChatRunner:
 
     def create_user_message(self, payload: SendMessagePayload) -> UserMessage:
         return UserMessage(
-            text= payload.prompt,
-            genai_model= payload.genai_model,
-            max_tokens= self.MAX_TOKENS,
-            temperature= self.TEMPERATURE
+            text=payload.prompt,
+            genai_model=payload.genai_model,
+            max_tokens=payload.max_tokens,
+            temperature=payload.temperature,
+            conversation_id=payload.chat_id or utils.generate_hash_id(),
+            user_id=str(self.user.id),
         )
 
     def get_genai_response(self, user_message: UserMessage) -> GenaiMessage:
         return self.genai_handler.get_completions(user_message=user_message)
-    
+

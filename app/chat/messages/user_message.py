@@ -13,3 +13,4 @@ class UserMessage(Message):
     """
     max_tokens: int
     temperature: float
+    user_id: str

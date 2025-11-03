@@ -4,10 +4,10 @@ from app.dependencies.chat import get_chat_repository
 from app.users.auth import get_current_user
 from app.users.models import User
 
+from app.chat.chat import ChatService
 from app.chat.model import SendMessagePayload
 from app.chat.repository import ChatRepository
-
-from app.chat.runners.message import ChatRunner
+from app.genai.handler import GenaiHander
 
 router = APIRouter()
 
@@ -18,6 +18,6 @@ async def send(
     repo: ChatRepository = Depends(get_chat_repository),
     current_user: User = Depends(get_current_user),
 ):
-    runner = ChatRunner(user= current_user)
-    res = runner.run(payload)
-    return res
+    handler = GenaiHander(user=current_user)
+    service = ChatService(repository=repo, handler=handler)
+    return await service.send_message(user_id=str(current_user.id), payload=payload)

@@ -13,3 +13,9 @@ class GenaiMessage(Message):
     user_message_id: str
     genai_role: str
     genai_usage: GenaiModelUsage
+
+    def as_dict(self) -> dict:
+        data = super().as_dict()
+        if isinstance(self.genai_usage, GenaiModelUsage):
+            data["genai_usage"] = self.genai_usage.model_dump()
+        return data

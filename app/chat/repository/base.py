@@ -23,5 +23,13 @@ class ChatRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_conversation(self, user_id: str, conversation_id: str) -> Optional[dict]:
+        ...
+
+    @abstractmethod
+    async def save_conversation(self, conversation: dict) -> None:
+        ...
+
+    @abstractmethod
     async def list_conversations(self, user_id: str) -> List[dict]:
         ...

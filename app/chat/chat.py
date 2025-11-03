@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.chat.messages.user_message import UserMessage
@@ -13,9 +14,20 @@ class ChatService:
         self._handler = handler
 
     async def send_message(self, user_id: str, payload) -> dict:
-        conversation_id = payload.chat_id or await self._repository.create_conversation(
-            user_id=user_id, title=getattr(payload, "title", None)
+        conversation_id = payload.chat_id or utils.generate_hash_id()
+        conversation = await self._repository.get_conversation(
+            user_id=user_id, conversation_id=conversation_id
         )
+
+        now = datetime.now(timezone.utc)
+        if not conversation:
+            conversation = {
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "title": getattr(payload, "title", "Nova conversa"),
+                "created_at": now,
+                "messages": [],
+            }
 
         user_message = UserMessage(
             text=payload.prompt,
@@ -25,23 +37,23 @@ class ChatService:
             temperature=payload.temperature,
             user_id=user_id,
         )
-        await self._repository.append_user_message(user_message)
+        conversation["messages"].append(user_message.as_dict())
 
-        completion = await self._handler.generate_completion(user_message)
-        genai_message = GenaiMessage(
-            text=completion.text,
-            genai_model=user_message.genai_model,
-            conversation_id=conversation_id,
-            user_message_id=user_message.message_id,
-            genai_role=completion.role,
-            genai_usage=completion.usage,
-        )
-        await self._repository.append_genai_message(genai_message)
+        genai_message: GenaiMessage = self._handler.get_completions(user_message)
+        conversation["messages"].append(genai_message.as_dict())
+
+        conversation["updated_at"] = now
+        await self._repository.save_conversation(conversation)
 
         return {
             "conversation_id": conversation_id,
-            "messages": [user_message.as_dict(), genai_message.as_dict()],
+            "messages": conversation["messages"],
         }
 
     async def get_history(self, user_id: str, conversation_id: str) -> list[dict]:
-        return await self._repository.list_messages(user_id=user_id, conversation_id=conversation_id)
+        conversation = await self._repository.get_conversation(
+            user_id=user_id, conversation_id=conversation_id
+        )
+        if not conversation:
+            return []
+        return conversation.get("messages", [])

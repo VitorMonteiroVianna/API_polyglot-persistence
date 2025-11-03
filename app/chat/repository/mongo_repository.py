@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -17,8 +17,8 @@ class MongoChatRepository(ChatRepository):
         doc = {
             "user_id": user_id,
             "title": title or "Nova conversa",
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
         }
         result = await self._conversations.insert_one(doc)
         return str(result.inserted_id)
@@ -36,5 +36,51 @@ class MongoChatRepository(ChatRepository):
         return [doc async for doc in cursor]
 
     async def list_conversations(self, user_id: str) -> List[dict]:
-        cursor = self._conversations.find({"user_id": user_id}).sort("created_at", -1)
-        return [doc async for doc in cursor]
+        cursor = self._conversations.find({"user_id": user_id}).sort("updated_at", -1)
+        return [self._strip_id(doc) async for doc in cursor]
+
+    async def get_conversation(self, user_id: str, conversation_id: str) -> Optional[dict]:
+        doc = await self._conversations.find_one(
+            {"_id": conversation_id, "user_id": user_id}
+        )
+        return self._strip_id(doc)
+
+    async def save_conversation(self, conversation: dict) -> None:
+        conversation_id = conversation.get("conversation_id")
+        user_id = conversation.get("user_id")
+        if not conversation_id or not user_id:
+            raise ValueError("conversation must include 'conversation_id' and 'user_id'")
+
+        payload = self._serialize(conversation)
+        payload["_id"] = conversation_id
+
+        await self._conversations.update_one(
+            {"_id": conversation_id, "user_id": user_id},
+            {"$set": payload},
+            upsert=True,
+        )
+
+    def _serialize(self, value):
+        if isinstance(value, dict):
+            return {k: self._serialize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._serialize(item) for item in value]
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
+
+    def _jsonify(self, value):
+        if isinstance(value, dict):
+            return {k: self._jsonify(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._jsonify(item) for item in value]
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
+
+    def _strip_id(self, doc: Optional[dict]) -> Optional[dict]:
+        if not doc:
+            return doc
+        cleaned = dict(doc)
+        cleaned.pop("_id", None)
+        return cleaned

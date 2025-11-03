@@ -114,3 +114,105 @@ Essa chave é tratada de forma **segura, como uma senha**:
 - Salva a resposta no NOSQL
 
 
+
+## 🧭 Controle de Migrations
+
+O projeto utiliza o **Alembic** para versionar e aplicar mudanças no banco de dados PostgreSQL hospedado no **Supabase** (com conexão via Pooler).
+
+---
+
+## ⚙️ Estrutura de Conexão
+
+A conexão com o banco é feita através de variáveis definidas no arquivo `.env`:
+
+```bash
+DATABASE_URL=postgresql+psycopg2://postgres.<project-id>:<PASSWORD>@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require
+```
+
+> ⚠️ Importante: use sempre o **usuário com prefixo `postgres.<project-id>`** (como fornecido pelo Supabase).
+
+---
+
+## 🧩 Quando criar uma migration
+
+Você deve gerar uma **nova migration** sempre que **alterar o modelo de dados** da aplicação — por exemplo:
+
+- Criar ou remover uma tabela (`Base` de novos modelos SQLAlchemy)
+- Adicionar, renomear ou excluir colunas
+- Alterar relacionamentos (`ForeignKey`, `relationship`, etc.)
+- Mudar constraints (unique, not null, default...)
+
+Em resumo: **qualquer mudança em `models.py` que afete o schema do banco** precisa de uma migration.
+
+---
+
+## 🚀 Como criar e aplicar migrations
+
+### 1️⃣ Gerar uma nova migration
+
+Depois de atualizar seus modelos (por exemplo, `app/users/models.py`):
+
+```bash
+alembic revision --autogenerate -m "Descrição da mudança"
+```
+
+📄 Isso cria um novo arquivo de migration dentro da pasta `alembic/versions/`, contendo as instruções SQL para atualizar o banco.
+
+---
+
+### 2️⃣ Revisar o conteúdo da migration
+
+Abra o arquivo gerado em `alembic/versions/xxxx_nome_da_migration.py` e verifique:
+
+- Se as tabelas e colunas alteradas estão corretas  
+- Se não há instruções desnecessárias ou faltantes  
+
+💡 Dica: se estiver em dúvida, **nunca rode direto em produção**. Teste primeiro localmente ou em um banco de staging.
+
+---
+
+### 3️⃣ Aplicar as migrations no banco
+
+Para aplicar todas as migrations pendentes:
+
+```bash
+alembic upgrade head
+```
+
+Isso executa as alterações no banco remoto (Supabase).
+
+---
+
+### 4️⃣ Reverter uma migration (opcional)
+
+Se precisar voltar ao estado anterior:
+
+```bash
+alembic downgrade -1
+```
+
+ou para voltar a uma versão específica:
+
+```bash
+alembic downgrade <revision_id>
+```
+
+---
+
+## 🧰 Comandos úteis
+
+| Ação | Comando |
+|------|----------|
+| Ver histórico de migrations | `alembic history` |
+| Mostrar versão atual do banco | `alembic current` |
+| Criar nova migration | `alembic revision --autogenerate -m "mensagem"` |
+| Aplicar migrations | `alembic upgrade head` |
+| Reverter última migration | `alembic downgrade -1` |
+
+---
+
+## 🧩 Dicas adicionais
+
+- Mantenha sempre a **estrutura de models e Base centralizada** (ex: `app/users/models.py`)  
+- Use o `Base.metadata` importado no `env.py` para garantir que o Alembic veja todos os modelos  
+- Se estiver usando múltiplos módulos com models, importe todos no `env.py` antes de definir `target_metadata`

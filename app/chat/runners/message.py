@@ -8,6 +8,9 @@ from app.chat.messages import UserMessage, GenaiMessage
 
 
 
+
+from app.chat.runners.embedding import EmbeddingRunner
+
 class ChatRunner:
 
     def __init__(self, user: User):
@@ -15,6 +18,12 @@ class ChatRunner:
         self.genai_handler: GenaiHander= self.start_genai_hander()
 
     def run(self, payload: SendMessagePayload):
+
+        if payload.use_embedding:
+            emb_runner = EmbeddingRunner(user= self.user)
+            payload.prompt = emb_runner.enrich_prompt(
+                prompt=payload.prompt,
+            )
         
         user_message = self.create_user_message(payload)
         genai_res = self.get_genai_response(user_message)

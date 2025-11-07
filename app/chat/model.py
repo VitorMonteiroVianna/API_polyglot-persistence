@@ -11,6 +11,7 @@ class SendMessagePayload(BaseModel):
     genai_model: AvailableModels 
     prompt: str
     max_tokens: int
+    use_embedding: bool
     temperature: Annotated[float, Field(ge=0.0, le=1.0)]
 
     @field_validator("temperature", mode="before")

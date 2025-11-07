@@ -1,9 +1,12 @@
 import os
 import chromadb
+
+from typing import List
 from chromadb.utils import embedding_functions
 
 from app.users.models import User
 from app.genai.handler import GenaiHander
+from app.genai.available_models import AvailableModels
 from app.chat.schemas.embedding import EmbeddingPayload, EmbeddingResponse
 from app.shared import utils
 
@@ -38,6 +41,38 @@ class EmbeddingRunner:
         """
         collection_name = f"user_{self.user.id}_embeddings"
         return self.client.get_or_create_collection(name=collection_name)
+    
+    def enrich_prompt(self, prompt: str, model: AvailableModels = AvailableModels.OPENAI_EMBEDDING_3_SMALL, top_k: int = 3) -> str:
+        """
+        Retorna o prompt enriquecido com informações relevantes do banco vetorial.
+        - Gera o embedding do prompt
+        - Busca os embeddings mais similares
+        - Retorna um prompt contextualizado
+        """
+        prompt_vector = self.genai_handler.get_embedding(
+            text=prompt,
+            model=model
+        )
+
+        results = self.collection.query(
+            query_embeddings=[prompt_vector],
+            n_results=top_k
+        )
+
+        retrieved_docs: List[str] = results.get("documents", [[]])[0]
+
+        if not retrieved_docs:
+            return prompt  
+
+        context_text = "\n".join(retrieved_docs)
+
+        enriched_prompt = (
+            f"Contexto relevante:\n{context_text}\n\n"
+            f"Pergunta original:\n{prompt}"
+        )
+
+        return enriched_prompt
+
 
     def run(self, payload: EmbeddingPayload) -> EmbeddingResponse:
         """

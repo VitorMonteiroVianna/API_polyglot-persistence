@@ -1,86 +1,83 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
+from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.chat.repository.base import ChatRepository
-from app.chat.messages.user_message import UserMessage
 from app.chat.messages.genai_message import GenaiMessage
+from app.chat.messages.user_message import UserMessage
+from app.chat.repository.base import ChatRepository
 
 
 class MongoChatRepository(ChatRepository):
     def __init__(self, database: AsyncIOMotorDatabase):
         self._conversations = database["chat_conversations"]
-        self._messages = database["chat_messages"]
 
-    async def create_conversation(self, user_id: str, title: Optional[str] = None) -> str:
+    async def create_conversation(self, user_id: str, title: str | None = None) -> dict:
+        conversation_id = ObjectId()
         doc = {
+            "_id": str(conversation_id),
             "user_id": user_id,
             "title": title or "Nova conversa",
-            "created_at": datetime.now(),
-            "updated_at": datetime.now(),
+            "messages": [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
         }
-        result = await self._conversations.insert_one(doc)
-        return str(result.inserted_id)
-
-    async def append_user_message(self, message: UserMessage) -> None:
-        await self._messages.insert_one({**message.as_dict(), "role": "user"})
-
-    async def append_genai_message(self, message: GenaiMessage) -> None:
-        await self._messages.insert_one({**message.as_dict(), "role": "assistant"})
-
-    async def list_messages(self, user_id: str, conversation_id: str) -> List[dict]:
-        cursor = self._messages.find(
-            {"user_id": user_id, "conversation_id": conversation_id}
-        ).sort("created_at", 1)
-        return [doc async for doc in cursor]
-
-    async def list_conversations(self, user_id: str) -> List[dict]:
-        cursor = self._conversations.find({"user_id": user_id}).sort("updated_at", -1)
-        return [self._strip_id(doc) async for doc in cursor]
+        await self._conversations.insert_one(doc)
+        return doc
 
     async def get_conversation(self, user_id: str, conversation_id: str) -> Optional[dict]:
-        doc = await self._conversations.find_one(
+        return await self._conversations.find_one(
             {"_id": conversation_id, "user_id": user_id}
         )
-        return self._strip_id(doc)
 
-    async def save_conversation(self, conversation: dict) -> None:
-        conversation_id = conversation.get("conversation_id")
-        user_id = conversation.get("user_id")
-        if not conversation_id or not user_id:
-            raise ValueError("conversation must include 'conversation_id' and 'user_id'")
+    async def list_conversations(self, user_id: str) -> List[dict]:
+        cursor = self._conversations.find(
+            {"user_id": user_id},
+            {"messages": 0},
+        ).sort("updated_at", -1)
+        return [doc async for doc in cursor]
 
-        payload = self._serialize(conversation)
-        payload["_id"] = conversation_id
+    async def save_conversation(self, conversation: dict) -> Any:
+        conversation["updated_at"] = datetime.utcnow()
+        result = await self._conversations.update_one(
+            {"_id": conversation["_id"], "user_id": conversation["user_id"]},
+            {"$set": conversation},
+            upsert=True,
+        )
+        return result
 
+    async def append_user_message(self, message: UserMessage) -> None:
+        doc = message.as_dict()
+        doc["role"] = "user"
         await self._conversations.update_one(
-            {"_id": conversation_id, "user_id": user_id},
-            {"$set": payload},
+            {"_id": doc["conversation_id"], "user_id": doc["user_id"]},
+            {
+                "$setOnInsert": {
+                    "title": "Nova conversa",
+                    "created_at": doc["created_at"],
+                    "messages": [],
+                },
+                "$push": {"messages": doc},
+                "$set": {"updated_at": datetime.utcnow()},
+            },
             upsert=True,
         )
 
-    def _serialize(self, value):
-        if isinstance(value, dict):
-            return {k: self._serialize(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [self._serialize(item) for item in value]
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return value
+    async def append_genai_message(self, message: GenaiMessage) -> None:
+        doc = message.as_dict()
+        doc["role"] = "assistant"
+        await self._conversations.update_one(
+            {"_id": doc["conversation_id"], "user_id": doc["user_id"]},
+            {
+                "$push": {"messages": doc},
+                "$set": {"updated_at": datetime.utcnow()},
+            },
+        )
 
-    def _jsonify(self, value):
-        if isinstance(value, dict):
-            return {k: self._jsonify(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [self._jsonify(item) for item in value]
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return value
-
-    def _strip_id(self, doc: Optional[dict]) -> Optional[dict]:
-        if not doc:
-            return doc
-        cleaned = dict(doc)
-        cleaned.pop("_id", None)
-        return cleaned
+    async def list_messages(self, user_id: str, conversation_id: str) -> List[dict]:
+        conversation = await self._conversations.find_one(
+            {"_id": conversation_id, "user_id": user_id},
+            {"messages": 1, "_id": 0},
+        )
+        return conversation.get("messages", []) if conversation else []

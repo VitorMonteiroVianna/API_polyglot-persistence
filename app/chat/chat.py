@@ -39,20 +39,25 @@ class ChatService:
         )
         conversation["messages"].append(user_message.as_dict())
 
-        genai_message: GenaiMessage = self._handler.get_completions(user_message)
-        conversation["messages"].append(genai_message.as_dict())
+        response_message = self._handler.get_completions(
+            user_message=user_message,
+        )
+        response_message.user_id = user_id
+        await self._repository.append_genai_message(response_message)
 
-        conversation["updated_at"] = now
-        await self._repository.save_conversation(conversation)
-
+        history = await self._repository.list_messages(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
         return {
             "conversation_id": conversation_id,
-            "messages": conversation["messages"],
+            "messages": history,
         }
 
     async def get_history(self, user_id: str, conversation_id: str) -> list[dict]:
         conversation = await self._repository.get_conversation(
-            user_id=user_id, conversation_id=conversation_id
+            user_id=user_id,
+            conversation_id=conversation_id,
         )
         if not conversation:
             return []

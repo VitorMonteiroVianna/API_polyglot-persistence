@@ -1,3 +1,5 @@
+import numpy as np
+
 from typing import Dict
 
 from app.services.open_router import OpenRouterService
@@ -69,3 +71,11 @@ class GenaiHander:
         )
 
         return genai_message
+
+    def get_embedding(self, text: str, model: AvailableModels) -> list[float]:
+        """
+        Gera um vetor de embedding para o texto informado.
+        Implementado via OpenRouter.
+        """
+        return self.open_router.generate_embedding(text, model)
+            

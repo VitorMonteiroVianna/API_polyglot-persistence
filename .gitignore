@@ -1,4 +1,19 @@
+# Arquivos e diretórios do Python
+__pycache__/
+*.py[cod]
+
+# Ambiente virtual
+.venv/
+
+# Arquivos de banco de dados locais
 *.db
-.venv
-__pycache__
+
+# Variáveis de ambiente
 .env
+
+# Logs e cache
+*.log
+*.sqlite3
+.cache/
+
+*.bin

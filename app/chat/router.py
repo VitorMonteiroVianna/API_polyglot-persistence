@@ -22,7 +22,7 @@ async def send(
     current_user: User = Depends(get_current_user),
 ):
     handler = GenaiHander(user=current_user)
-    service = ChatService(repository=repo, handler=handler)
+    service = ChatService(repository=repo, handler=handler, user=current_user)
     return await service.send_message(user_id=str(current_user.id), payload=payload)
 
 @router.post("/embedding", response_model=EmbeddingResponse)

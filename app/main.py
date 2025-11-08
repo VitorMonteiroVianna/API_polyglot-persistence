@@ -5,9 +5,6 @@ from app.users import router as users_router
 from app.chat.router import router as chat_router
 from app.users.models import Base, engine
 
-# cria tabelas no banco (apenas dev; em produção use migrations)
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="FastAPI JWT Example")
 
 app.include_router(users_router.router, prefix="/users", tags=["users"])

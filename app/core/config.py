@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 from cryptography.fernet import Fernet
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic_settings import BaseSettings
@@ -10,6 +11,18 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "default-secret")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+
+USER = os.getenv("USER")
+PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = os.getenv("PORT")
+DBNAME = os.getenv("DBNAME")
+
+if not all([USER, PASSWORD, HOST, PORT, DBNAME]):
+    raise ValueError("Uma ou mais variáveis de conexão estão faltando no .env")
+
+PASSWORD_ENCODED = quote_plus(PASSWORD)
+DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD_ENCODED}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
 
 FERNET_KEY = os.getenv("FERNET_KEY")
 if not FERNET_KEY:

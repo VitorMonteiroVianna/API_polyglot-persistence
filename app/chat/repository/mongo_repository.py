@@ -1,17 +1,18 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.chat.repository.base import ChatRepository
 from app.chat.messages.user_message import UserMessage
 from app.chat.messages.genai_message import GenaiMessage
+from app.core.config import settings
 
 
 class MongoChatRepository(ChatRepository):
     def __init__(self, database: AsyncIOMotorDatabase):
-        self._conversations = database["chat_conversations"]
-        self._messages = database["chat_messages"]
+        self._conversations = database[settings.MONGO_CONVERSATIONS_COLLECTION]
+        self._messages = database[settings.MONGO_MESSAGES_COLLECTION]
 
     async def create_conversation(self, user_id: str, title: Optional[str] = None) -> str:
         doc = {
@@ -37,7 +38,12 @@ class MongoChatRepository(ChatRepository):
 
     async def list_conversations(self, user_id: str) -> List[dict]:
         cursor = self._conversations.find({"user_id": user_id}).sort("updated_at", -1)
-        return [self._strip_id(doc) async for doc in cursor]
+        conversations: List[dict] = []
+        async for doc in cursor:
+            cleaned = self._strip_id(doc)
+            if cleaned is not None:
+                conversations.append(cleaned)
+        return conversations
 
     async def get_conversation(self, user_id: str, conversation_id: str) -> Optional[dict]:
         doc = await self._conversations.find_one(
@@ -60,7 +66,7 @@ class MongoChatRepository(ChatRepository):
             upsert=True,
         )
 
-    def _serialize(self, value):
+    def _serialize(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {k: self._serialize(v) for k, v in value.items()}
         if isinstance(value, list):
@@ -69,7 +75,7 @@ class MongoChatRepository(ChatRepository):
             return value.isoformat()
         return value
 
-    def _jsonify(self, value):
+    def _jsonify(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {k: self._jsonify(v) for k, v in value.items()}
         if isinstance(value, list):

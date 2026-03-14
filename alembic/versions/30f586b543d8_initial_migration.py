@@ -1,7 +1,7 @@
 """Initial migration
 
 Revision ID: 30f586b543d8
-Revises: 
+Revises:
 Create Date: 2025-11-02 20:52:06.103830
 
 """
@@ -31,7 +31,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
-    op.drop_table('teste')
+    op.execute('DROP TABLE IF EXISTS teste')
     # ### end Alembic commands ###
 
 

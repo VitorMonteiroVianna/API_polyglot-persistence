@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
 class UserCreate(BaseModel):
@@ -12,8 +12,7 @@ class UserRead(BaseModel):
     is_active: bool
     open_router_api_key: Optional[str] = None  # mostra já descriptografada
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserUpdate(BaseModel):
     password: Optional[str] = None

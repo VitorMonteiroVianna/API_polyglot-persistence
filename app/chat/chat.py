@@ -5,17 +5,18 @@ from app.users.models import User
 
 from app.chat.messages.user_message import UserMessage
 from app.chat.messages.genai_message import GenaiMessage
-from app.chat.repository import ChatRepository
+from app.chat.interfaces.repository.i_chat_repository import IChatRepository
 from app.genai.handler import GenaiHander
 from app.shared import utils
 
 from app.chat.runners.embedding import EmbeddingRunner
+from app.chat.interfaces.i_chat_service import IChatService
 
 
-class ChatService:
+class ChatService(IChatService):
     def __init__(
-            self, 
-            repository: ChatRepository, 
+            self,
+            repository: IChatRepository,
             handler: GenaiHander,
             user: User
     ):

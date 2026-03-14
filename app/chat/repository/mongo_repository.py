@@ -3,13 +3,13 @@ from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.chat.repository.base import ChatRepository
+from app.chat.interfaces.repository.i_mongo_chat_repository import IMongoChatRepository
 from app.chat.messages.user_message import UserMessage
 from app.chat.messages.genai_message import GenaiMessage
 from app.core.config import settings
 
 
-class MongoChatRepository(ChatRepository):
+class MongoChatRepository(IMongoChatRepository):
     def __init__(self, database: AsyncIOMotorDatabase):
         self._conversations = database[settings.MONGO_CONVERSATIONS_COLLECTION]
         self._messages = database[settings.MONGO_MESSAGES_COLLECTION]

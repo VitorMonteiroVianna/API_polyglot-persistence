@@ -9,9 +9,10 @@ from app.genai.handler import GenaiHander
 from app.genai.available_models import AvailableModels
 from app.chat.schemas.embedding import EmbeddingPayload, EmbeddingResponse
 from app.shared import utils
+from app.chat.interfaces.runners.i_embedding_runner import IEmbeddingRunner
 
 
-class EmbeddingRunner:
+class EmbeddingRunner(IEmbeddingRunner):
     """
     Classe responsável por gerar e armazenar embeddings no banco vetorial Chroma.
     """

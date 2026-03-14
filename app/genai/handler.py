@@ -11,10 +11,12 @@ from app.genai.available_models import AvailableModels
 
 from app.chat.messages import UserMessage, GenaiMessage
 from app.chat.tokens import CompletionTokenDetails, GenaiModelUsage
+from app.genai.interfaces.i_genai_hander import IGenaiHander
 
 from app.shared import utils
 
-class GenaiHander:
+
+class GenaiHander(IGenaiHander):
     def __init__(self, user: User):
         self.user= user
         self.open_router: OpenRouterService = self.__start_open_router_service()

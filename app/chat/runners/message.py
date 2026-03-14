@@ -9,8 +9,10 @@ from app.shared import utils
 
 
 from app.chat.runners.embedding import EmbeddingRunner
+from app.chat.interfaces.runners.i_chat_runner import IChatRunner
 
-class ChatRunner:
+
+class ChatRunner(IChatRunner):
 
     def __init__(self, user: User):
         self.user = user

@@ -8,7 +8,7 @@ from app.chat.tokens import GenaiModelUsage
 class GenaiMessage(Message):
     """
     Classe usada para armazenar uma mensagem que retornada pelo modelo
-    de Gen AI. 
+    de Gen AI.
     """
     user_message_id: str
     genai_role: str

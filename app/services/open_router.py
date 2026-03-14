@@ -8,12 +8,12 @@ class OpenRouterService(IOpenRouterService):
     BASE_URL = "https://openrouter.ai/api/v1"
 
     def __init__(self, api_key: str):
-        self.api_key = api_key
-        if not self.api_key:
+        self.__api_key = api_key
+        if not self.__api_key:
             raise ValueError("OPEN_ROUTER_KEY environment variable is not set.")
 
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
+        self.__headers = {
+            "Authorization": f"Bearer {self.__api_key}",
             "Content-Type": "application/json",
         }
 
@@ -33,7 +33,7 @@ class OpenRouterService(IOpenRouterService):
             "max_tokens": max_tokens,
             "temperature": temperature
         }
-        response = requests.post(completions_url, json=payload, headers=self.headers)
+        response = requests.post(completions_url, json=payload, headers=self.__headers)
         response.raise_for_status()
         return response.json()
 
@@ -43,7 +43,7 @@ class OpenRouterService(IOpenRouterService):
         """Chama o endpoint de embeddings do OpenRouter."""
         response = requests.post(
             f"{self.BASE_URL}/embeddings",
-            headers=self.headers,
+            headers=self.__headers,
             json={"model": model.value, "input": text},
         )
         response.raise_for_status()

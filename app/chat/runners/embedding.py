@@ -5,7 +5,7 @@ from typing import List
 from chromadb.utils import embedding_functions
 
 from app.users.models import User
-from app.genai.handler import GenaiHander
+from app.genai.interfaces.i_genai_hander import IGenaiHander
 from app.genai.available_models import AvailableModels
 from app.chat.schemas.embedding import EmbeddingPayload, EmbeddingResponse
 from app.shared import utils
@@ -17,15 +17,12 @@ class EmbeddingRunner(IEmbeddingRunner):
     Classe responsável por gerar e armazenar embeddings no banco vetorial Chroma.
     """
 
-    def __init__(self, user: User):
-        self.user = user
-        self.genai_handler: GenaiHander = self.__start_genai_hander()
+    def __init__(self, user: User, genai_handler: IGenaiHander):
+        self.__user = user
+        self.__genai_handler = genai_handler
 
-        self.client = self.__start_chroma_client()
-        self.collection = self.__get_or_create_collection()
-
-    def __start_genai_hander(self) -> GenaiHander:
-        return GenaiHander(user=self.user)
+        self.__client = self.__start_chroma_client()
+        self.__collection = self.__get_or_create_collection()
 
     def __start_chroma_client(self):
         """
@@ -40,8 +37,8 @@ class EmbeddingRunner(IEmbeddingRunner):
         Cria ou acessa a coleção vetorial padrão do usuário.
         Cada usuário tem sua própria coleção, isolada por ID.
         """
-        collection_name = f"user_{self.user.id}_embeddings"
-        return self.client.get_or_create_collection(name=collection_name)
+        collection_name = f"user_{self.__user.id}_embeddings"
+        return self.__client.get_or_create_collection(name=collection_name)
 
     def enrich_prompt(self, prompt: str, model: AvailableModels = AvailableModels.OPENAI_EMBEDDING_3_SMALL, top_k: int = 3) -> str:
         """
@@ -50,12 +47,12 @@ class EmbeddingRunner(IEmbeddingRunner):
         - Busca os embeddings mais similares
         - Retorna um prompt contextualizado
         """
-        prompt_vector = self.genai_handler.get_embedding(
+        prompt_vector = self.__genai_handler.get_embedding(
             text=prompt,
             model=model
         )
 
-        results = self.collection.query(
+        results = self.__collection.query(
             query_embeddings=[prompt_vector],
             n_results=top_k
         )
@@ -79,14 +76,14 @@ class EmbeddingRunner(IEmbeddingRunner):
         """
         Gera o embedding via GenaiHandler e salva no Chroma.
         """
-        embedding_vector = self.genai_handler.get_embedding(
+        embedding_vector = self.__genai_handler.get_embedding(
             text=payload.text,
             model=payload.model
         )
 
         embedding_id = utils.generate_hash_id()
 
-        self.collection.add(
+        self.__collection.add(
             ids=[embedding_id],
             documents=[payload.text],
             embeddings=[embedding_vector],

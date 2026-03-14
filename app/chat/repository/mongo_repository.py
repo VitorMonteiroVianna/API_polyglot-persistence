@@ -11,8 +11,8 @@ from app.core.config import settings
 
 class MongoChatRepository(IMongoChatRepository):
     def __init__(self, database: AsyncIOMotorDatabase):
-        self._conversations = database[settings.MONGO_CONVERSATIONS_COLLECTION]
-        self._messages = database[settings.MONGO_MESSAGES_COLLECTION]
+        self.__conversations = database[settings.MONGO_CONVERSATIONS_COLLECTION]
+        self.__messages = database[settings.MONGO_MESSAGES_COLLECTION]
 
     async def create_conversation(self, user_id: str, title: Optional[str] = None) -> str:
         doc = {
@@ -21,23 +21,23 @@ class MongoChatRepository(IMongoChatRepository):
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
         }
-        result = await self._conversations.insert_one(doc)
+        result = await self.__conversations.insert_one(doc)
         return str(result.inserted_id)
 
     async def append_user_message(self, message: UserMessage) -> None:
-        await self._messages.insert_one({**message.as_dict(), "role": "user"})
+        await self.__messages.insert_one({**message.as_dict(), "role": "user"})
 
     async def append_genai_message(self, message: GenaiMessage) -> None:
-        await self._messages.insert_one({**message.as_dict(), "role": "assistant"})
+        await self.__messages.insert_one({**message.as_dict(), "role": "assistant"})
 
     async def list_messages(self, user_id: str, conversation_id: str) -> List[dict]:
-        cursor = self._messages.find(
+        cursor = self.__messages.find(
             {"user_id": user_id, "conversation_id": conversation_id}
         ).sort("created_at", 1)
         return [doc async for doc in cursor]
 
     async def list_conversations(self, user_id: str) -> List[dict]:
-        cursor = self._conversations.find({"user_id": user_id}).sort("updated_at", -1)
+        cursor = self.__conversations.find({"user_id": user_id}).sort("updated_at", -1)
         conversations: List[dict] = []
         async for doc in cursor:
             cleaned = self.__strip_id(doc)
@@ -46,7 +46,7 @@ class MongoChatRepository(IMongoChatRepository):
         return conversations
 
     async def get_conversation(self, user_id: str, conversation_id: str) -> Optional[dict]:
-        doc = await self._conversations.find_one(
+        doc = await self.__conversations.find_one(
             {"_id": conversation_id, "user_id": user_id}
         )
         return self.__strip_id(doc)
@@ -60,7 +60,7 @@ class MongoChatRepository(IMongoChatRepository):
         payload = self.__serialize(conversation)
         payload["_id"] = conversation_id
 
-        await self._conversations.update_one(
+        await self.__conversations.update_one(
             {"_id": conversation_id, "user_id": user_id},
             {"$set": payload},
             upsert=True,

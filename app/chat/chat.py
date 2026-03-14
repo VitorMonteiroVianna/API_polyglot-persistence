@@ -1,15 +1,12 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from app.users.models import User
-
 from app.chat.messages.user_message import UserMessage
 from app.chat.messages.genai_message import GenaiMessage
 from app.chat.interfaces.repository.i_chat_repository import IChatRepository
-from app.genai.handler import GenaiHander
+from app.genai.interfaces.i_genai_hander import IGenaiHander
+from app.chat.interfaces.runners.i_embedding_runner import IEmbeddingRunner
 from app.shared import utils
-
-from app.chat.runners.embedding import EmbeddingRunner
 from app.chat.interfaces.i_chat_service import IChatService
 
 
@@ -17,23 +14,22 @@ class ChatService(IChatService):
     def __init__(
             self,
             repository: IChatRepository,
-            handler: GenaiHander,
-            user: User
+            handler: IGenaiHander,
+            embedding_runner: IEmbeddingRunner,
     ):
-        self._repository = repository
-        self._handler = handler
-        self.user = user
+        self.__repository = repository
+        self.__handler = handler
+        self.__embedding_runner = embedding_runner
 
     async def send_message(self, user_id: str, payload) -> dict:
 
         if payload.use_embedding:
-            emb_runner = EmbeddingRunner(user= self.user)
-            payload.prompt = emb_runner.enrich_prompt(
+            payload.prompt = self.__embedding_runner.enrich_prompt(
                 prompt=payload.prompt,
             )
 
         conversation_id = payload.chat_id or utils.generate_hash_id()
-        conversation = await self._repository.get_conversation(
+        conversation = await self.__repository.get_conversation(
             user_id=user_id, conversation_id=conversation_id
         )
 
@@ -57,11 +53,11 @@ class ChatService(IChatService):
         )
         conversation["messages"].append(user_message.as_dict())
 
-        genai_message: GenaiMessage = self._handler.get_completions(user_message)
+        genai_message: GenaiMessage = self.__handler.get_completions(user_message)
         conversation["messages"].append(genai_message.as_dict())
 
         conversation["updated_at"] = now
-        await self._repository.save_conversation(conversation)
+        await self.__repository.save_conversation(conversation)
 
         return {
             "conversation_id": conversation_id,
@@ -69,7 +65,7 @@ class ChatService(IChatService):
         }
 
     async def get_history(self, user_id: str, conversation_id: str) -> list[dict]:
-        conversation = await self._repository.get_conversation(
+        conversation = await self.__repository.get_conversation(
             user_id=user_id, conversation_id=conversation_id
         )
         if not conversation:

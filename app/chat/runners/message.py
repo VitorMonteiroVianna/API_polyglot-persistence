@@ -2,27 +2,31 @@ from app.users.models import User
 
 from app.chat.model import SendMessagePayload
 
-from app.genai.handler import GenaiHander
+from app.genai.interfaces.i_genai_hander import IGenaiHander
 
 from app.chat.messages import UserMessage, GenaiMessage
 from app.shared import utils
 
-
-from app.chat.runners.embedding import EmbeddingRunner
 from app.chat.interfaces.runners.i_chat_runner import IChatRunner
+from app.chat.interfaces.runners.i_embedding_runner import IEmbeddingRunner
 
 
 class ChatRunner(IChatRunner):
 
-    def __init__(self, user: User):
-        self.user = user
-        self.genai_handler: GenaiHander= self.__start_genai_hander()
+    def __init__(
+        self,
+        user: User,
+        genai_handler: IGenaiHander,
+        embedding_runner: IEmbeddingRunner,
+    ):
+        self.__user = user
+        self.__genai_handler = genai_handler
+        self.__embedding_runner = embedding_runner
 
     def run(self, payload: SendMessagePayload):
 
         if payload.use_embedding:
-            emb_runner = EmbeddingRunner(user= self.user)
-            payload.prompt = emb_runner.enrich_prompt(
+            payload.prompt = self.__embedding_runner.enrich_prompt(
                 prompt=payload.prompt,
             )
 
@@ -31,10 +35,6 @@ class ChatRunner(IChatRunner):
 
         return {"res": genai_res.as_dict()}
 
-
-    def __start_genai_hander(self):
-        return GenaiHander(user= self.user)
-
     def __create_user_message(self, payload: SendMessagePayload) -> UserMessage:
         return UserMessage(
             text=payload.prompt,
@@ -42,9 +42,9 @@ class ChatRunner(IChatRunner):
             max_tokens=payload.max_tokens,
             temperature=payload.temperature,
             conversation_id=payload.chat_id or utils.generate_hash_id(),
-            user_id=str(self.user.id),
+            user_id=str(self.__user.id),
         )
 
     def __get_genai_response(self, user_message: UserMessage) -> GenaiMessage:
-        return self.genai_handler.get_completions(user_message=user_message)
+        return self.__genai_handler.get_completions(user_message=user_message)
 

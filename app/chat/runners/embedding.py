@@ -18,15 +18,15 @@ class EmbeddingRunner:
 
     def __init__(self, user: User):
         self.user = user
-        self.genai_handler: GenaiHander = self.start_genai_hander()
+        self.genai_handler: GenaiHander = self.__start_genai_hander()
 
-        self.client = self._start_chroma_client()
-        self.collection = self._get_or_create_collection()
+        self.client = self.__start_chroma_client()
+        self.collection = self.__get_or_create_collection()
 
-    def start_genai_hander(self) -> GenaiHander:
+    def __start_genai_hander(self) -> GenaiHander:
         return GenaiHander(user=self.user)
 
-    def _start_chroma_client(self):
+    def __start_chroma_client(self):
         """
         Inicializa o ChromaDB local com persistência em disco.
         """
@@ -34,14 +34,14 @@ class EmbeddingRunner:
         os.makedirs(db_path, exist_ok=True)
         return chromadb.PersistentClient(path=db_path)
 
-    def _get_or_create_collection(self):
+    def __get_or_create_collection(self):
         """
         Cria ou acessa a coleção vetorial padrão do usuário.
         Cada usuário tem sua própria coleção, isolada por ID.
         """
         collection_name = f"user_{self.user.id}_embeddings"
         return self.client.get_or_create_collection(name=collection_name)
-    
+
     def enrich_prompt(self, prompt: str, model: AvailableModels = AvailableModels.OPENAI_EMBEDDING_3_SMALL, top_k: int = 3) -> str:
         """
         Retorna o prompt enriquecido com informações relevantes do banco vetorial.
@@ -62,7 +62,7 @@ class EmbeddingRunner:
         retrieved_docs: List[str] = results.get("documents", [[]])[0]
 
         if not retrieved_docs:
-            return prompt  
+            return prompt
 
         context_text = "\n".join(retrieved_docs)
 

@@ -14,7 +14,7 @@ class ChatRunner:
 
     def __init__(self, user: User):
         self.user = user
-        self.genai_handler: GenaiHander= self.start_genai_hander()
+        self.genai_handler: GenaiHander= self.__start_genai_hander()
 
     def run(self, payload: SendMessagePayload):
 
@@ -23,17 +23,17 @@ class ChatRunner:
             payload.prompt = emb_runner.enrich_prompt(
                 prompt=payload.prompt,
             )
-        
-        user_message = self.create_user_message(payload)
-        genai_res = self.get_genai_response(user_message)
-        
+
+        user_message = self.__create_user_message(payload)
+        genai_res = self.__get_genai_response(user_message)
+
         return {"res": genai_res.as_dict()}
-    
-    
-    def start_genai_hander(self):
+
+
+    def __start_genai_hander(self):
         return GenaiHander(user= self.user)
 
-    def create_user_message(self, payload: SendMessagePayload) -> UserMessage:
+    def __create_user_message(self, payload: SendMessagePayload) -> UserMessage:
         return UserMessage(
             text=payload.prompt,
             genai_model=payload.genai_model,
@@ -43,6 +43,6 @@ class ChatRunner:
             user_id=str(self.user.id),
         )
 
-    def get_genai_response(self, user_message: UserMessage) -> GenaiMessage:
+    def __get_genai_response(self, user_message: UserMessage) -> GenaiMessage:
         return self.genai_handler.get_completions(user_message=user_message)
 

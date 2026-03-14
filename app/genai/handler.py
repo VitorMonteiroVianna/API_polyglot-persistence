@@ -17,13 +17,13 @@ from app.shared import utils
 class GenaiHander:
     def __init__(self, user: User):
         self.user= user
-        self.open_router: OpenRouterService = self.start_open_router_service()
+        self.open_router: OpenRouterService = self.__start_open_router_service()
 
-    def start_open_router_service(self):
-        open_router_api_key = self.get_user_api_key()
+    def __start_open_router_service(self):
+        open_router_api_key = self.__get_user_api_key()
         return OpenRouterService(api_key= open_router_api_key)
 
-    def get_user_api_key(self):
+    def __get_user_api_key(self):
         encrypted_key = self.user.open_router_api_key
         encrypted_key_str = str(encrypted_key) if encrypted_key is not None else ""
 
@@ -34,7 +34,7 @@ class GenaiHander:
 
         return decrypted_key
 
-    def create_genai_message_from_open_router_res(
+    def __create_genai_message_from_open_router_res(
         self, open_router_res: Dict, user_message: UserMessage
     ) -> GenaiMessage:
         """
@@ -43,7 +43,7 @@ class GenaiHander:
         """
         choice = open_router_res["choices"][0]
         usage = open_router_res.get("usage", {})
-        resolved_model = self._resolve_model(
+        resolved_model = self.__resolve_model(
             model_from_response=open_router_res.get("model"),
             requested_model=user_message.genai_model,
         )
@@ -64,7 +64,7 @@ class GenaiHander:
             ),
         )
 
-    def _resolve_model(self, model_from_response: str | None, requested_model: AvailableModels) -> AvailableModels:
+    def __resolve_model(self, model_from_response: str | None, requested_model: AvailableModels) -> AvailableModels:
         """
         Normaliza o modelo retornado pelo OpenRouter para um valor existente
         em `AvailableModels`.
@@ -94,7 +94,7 @@ class GenaiHander:
             max_tokens= user_message.max_tokens,
             temperature= user_message.temperature,
         )
-        genai_message = self.create_genai_message_from_open_router_res(
+        genai_message = self.__create_genai_message_from_open_router_res(
             open_router_res = open_router_res,
             user_message = user_message
         )

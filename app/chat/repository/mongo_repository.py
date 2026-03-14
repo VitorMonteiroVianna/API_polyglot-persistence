@@ -40,7 +40,7 @@ class MongoChatRepository(ChatRepository):
         cursor = self._conversations.find({"user_id": user_id}).sort("updated_at", -1)
         conversations: List[dict] = []
         async for doc in cursor:
-            cleaned = self._strip_id(doc)
+            cleaned = self.__strip_id(doc)
             if cleaned is not None:
                 conversations.append(cleaned)
         return conversations
@@ -49,7 +49,7 @@ class MongoChatRepository(ChatRepository):
         doc = await self._conversations.find_one(
             {"_id": conversation_id, "user_id": user_id}
         )
-        return self._strip_id(doc)
+        return self.__strip_id(doc)
 
     async def save_conversation(self, conversation: dict) -> None:
         conversation_id = conversation.get("conversation_id")
@@ -57,7 +57,7 @@ class MongoChatRepository(ChatRepository):
         if not conversation_id or not user_id:
             raise ValueError("conversation must include 'conversation_id' and 'user_id'")
 
-        payload = self._serialize(conversation)
+        payload = self.__serialize(conversation)
         payload["_id"] = conversation_id
 
         await self._conversations.update_one(
@@ -66,25 +66,25 @@ class MongoChatRepository(ChatRepository):
             upsert=True,
         )
 
-    def _serialize(self, value: Any) -> Any:
+    def __serialize(self, value: Any) -> Any:
         if isinstance(value, dict):
-            return {k: self._serialize(v) for k, v in value.items()}
+            return {k: self.__serialize(v) for k, v in value.items()}
         if isinstance(value, list):
-            return [self._serialize(item) for item in value]
+            return [self.__serialize(item) for item in value]
         if isinstance(value, datetime):
             return value.isoformat()
         return value
 
-    def _jsonify(self, value: Any) -> Any:
+    def __jsonify(self, value: Any) -> Any:
         if isinstance(value, dict):
-            return {k: self._jsonify(v) for k, v in value.items()}
+            return {k: self.__jsonify(v) for k, v in value.items()}
         if isinstance(value, list):
-            return [self._jsonify(item) for item in value]
+            return [self.__jsonify(item) for item in value]
         if isinstance(value, datetime):
             return value.isoformat()
         return value
 
-    def _strip_id(self, doc: Optional[dict]) -> Optional[dict]:
+    def __strip_id(self, doc: Optional[dict]) -> Optional[dict]:
         if not doc:
             return doc
         cleaned = dict(doc)
